@@ -1,0 +1,328 @@
+desc:SurroundScope Multimeter Analyzer
+tags:analysis meter multichannel loudness waveform spectrum
+options:gmem=SurroundScopeMultimeter
+
+// Pair this transparent analyzer with SurroundScope_Multimeter_Dashboard.lua.
+// Each Analyzer Slot has an independent shared-memory page; use the same slot
+// in the dashboard. The analyzer supports up to 64 REAPER channels.
+
+slider1:meter_slot=1<1,32,1>-Analyzer slot
+slider2:reset=0<0,1,1{Run,Reset}>-Reset meters
+slider3:wave_rate=60<10,1000,1>-Waveform capture rate (Hz)
+slider4:meter_rate=30<10,60,1>-Meter update rate (Hz)
+slider5:meter_response=300<10,2000,1>-Meter response / fall time (ms)
+
+@init
+MAX_CHANNELS = 64;
+WAVE_POINTS = 512;
+WAVE_CHANNELS = 24; // Waveform display supports immersive beds up to 22.2.
+SPECTRUM_BANDS = 48;
+SLOT_SIZE = 14000;
+HEADER = 0;
+STAT_BASE = 64;
+STAT_STRIDE = 5;
+WAVE_BASE = 512;
+SPECTRUM_BASE = 13500;
+FFT_SIZE = 2048;
+FFT_BUFFER = 0;
+HISTORY_BASE = 30000;
+HISTORY_SIZE = 3600; // 6 minutes at 100 ms loudness blocks
+SHELF_Z1 = 40000;
+SHELF_Z2 = 40100;
+HP_Z1 = 40200;
+HP_Z2 = 40300;
+
+last_srate = 0;
+fft_write = 0;
+fft_ready = 0;
+wave_write = 0;
+wave_countdown = 1;
+meter_samples = 0;
+loud_samples = 0;
+loud_block_samples = 0;
+loud_block_energy = 0;
+loud_history_count = 0;
+loud_history_write = 0;
+loud_block_number = 0;
+momentary_sum = 0;
+short_sum = 0;
+integrated_lufs = -120;
+last_gmem_reset = 0;
+last_meter_response = -1;
+meter_response_alpha = 0;
+
+function db(value)
+(
+  value > 0.000000000001 ? 20 * log10(value) : -120;
+);
+
+function power_to_lufs(value)
+(
+  value > 0.000000000001 ? -0.691 + 10 * log10(value) : -120;
+);
+
+function calc_k_weighting()
+(
+  // BS.1770-style K-weighting: 4 dB shelf around 1.68 kHz then RLB high pass.
+  shelf_a = pow(10, 4 / 40);
+  shelf_w = 2 * $pi * 1681.974450955533 / srate;
+  shelf_alpha = sin(shelf_w) / 2 * sqrt(2);
+  shelf_beta = 2 * sqrt(shelf_a) * shelf_alpha;
+  shelf_c = cos(shelf_w);
+  shelf_b0 = shelf_a * ((shelf_a + 1) + (shelf_a - 1) * shelf_c + shelf_beta);
+  shelf_b1 = -2 * shelf_a * ((shelf_a - 1) + (shelf_a + 1) * shelf_c);
+  shelf_b2 = shelf_a * ((shelf_a + 1) + (shelf_a - 1) * shelf_c - shelf_beta);
+  shelf_a0 = (shelf_a + 1) - (shelf_a - 1) * shelf_c + shelf_beta;
+  shelf_a1 = 2 * ((shelf_a - 1) - (shelf_a + 1) * shelf_c);
+  shelf_a2 = (shelf_a + 1) - (shelf_a - 1) * shelf_c - shelf_beta;
+  shelf_b0 /= shelf_a0; shelf_b1 /= shelf_a0; shelf_b2 /= shelf_a0;
+  shelf_a1 /= shelf_a0; shelf_a2 /= shelf_a0;
+
+  hp_w = 2 * $pi * 38.13547087602444 / srate;
+  hp_alpha = sin(hp_w) / (2 * 0.5003270373238773);
+  hp_c = cos(hp_w);
+  hp_b0 = (1 + hp_c) / 2;
+  hp_b1 = -(1 + hp_c);
+  hp_b2 = (1 + hp_c) / 2;
+  hp_a0 = 1 + hp_alpha;
+  hp_a1 = -2 * hp_c;
+  hp_a2 = 1 - hp_alpha;
+  hp_b0 /= hp_a0; hp_b1 /= hp_a0; hp_b2 /= hp_a0;
+  hp_a1 /= hp_a0; hp_a2 /= hp_a0;
+  last_srate = srate;
+);
+
+function k_weight(sample, channel)
+(
+  shelf_y = shelf_b0 * sample + SHELF_Z1[channel];
+  SHELF_Z1[channel] = shelf_b1 * sample - shelf_a1 * shelf_y + SHELF_Z2[channel];
+  SHELF_Z2[channel] = shelf_b2 * sample - shelf_a2 * shelf_y;
+  hp_y = hp_b0 * shelf_y + HP_Z1[channel];
+  HP_Z1[channel] = hp_b1 * shelf_y - hp_a1 * hp_y + HP_Z2[channel];
+  HP_Z2[channel] = hp_b2 * shelf_y - hp_a2 * hp_y;
+  hp_y;
+);
+
+function clear_meters()
+(
+  memset(10000, 0, 600); // raw peak, held peak, response envelopes and waveform arrays
+  memset(HISTORY_BASE, 0, HISTORY_SIZE);
+  memset(SHELF_Z1, 0, 400);
+  meter_samples = 0;
+  loud_samples = 0;
+  loud_block_samples = 0;
+  loud_block_energy = 0;
+  loud_history_count = 0;
+  loud_history_write = 0;
+  loud_block_number = 0;
+  momentary_sum = 0;
+  short_sum = 0;
+  integrated_lufs = -120;
+);
+
+function calc_meter_response()
+(
+  meter_response_alpha = exp(-1 / max(1, srate * meter_response / 1000));
+  last_meter_response = meter_response;
+);
+
+function update_integrated()
+(
+  ungated_sum = 0;
+  ungated_count = 0;
+  gated_sum = 0;
+  gated_count = 0;
+  history_index = 0;
+  loop(loud_history_count,
+    history_value = HISTORY_BASE[history_index];
+    power_to_lufs(history_value) >= -70 ?
+    (
+      ungated_sum += history_value;
+      ungated_count += 1;
+    );
+    history_index += 1;
+  );
+  ungated_lufs = power_to_lufs(ungated_sum / max(1, ungated_count));
+  relative_gate = max(-70, ungated_lufs - 10);
+  history_index = 0;
+  loop(loud_history_count,
+    history_value = HISTORY_BASE[history_index];
+    power_to_lufs(history_value) >= relative_gate ?
+    (
+      gated_sum += history_value;
+      gated_count += 1;
+    );
+    history_index += 1;
+  );
+  integrated_lufs = power_to_lufs(gated_sum / max(1, gated_count));
+);
+
+function publish()
+(
+  slot_base = (meter_slot - 1) * SLOT_SIZE;
+  overall_peak = 0;
+  overall_energy = 0;
+  channel_index = 0;
+  loop(active_channels,
+    sample_peak_value = 10000[channel_index];
+    peak_value = 10400[channel_index];
+    rms_value = sqrt(10500[channel_index]);
+    held_value = max(10200[channel_index] * 0.94, peak_value);
+    10200[channel_index] = held_value;
+    stat_address = slot_base + STAT_BASE + channel_index * STAT_STRIDE;
+    gmem[stat_address] = db(peak_value);
+    gmem[stat_address + 1] = db(rms_value);
+    gmem[stat_address + 2] = db(held_value);
+    gmem[stat_address + 3] = db(peak_value / max(rms_value, 0.000000000001));
+    gmem[stat_address + 4] = db(sample_peak_value); // sample peak; not a standards-certified true peak
+    overall_peak = max(overall_peak, peak_value);
+    overall_energy += 10500[channel_index];
+    10000[channel_index] = 0;
+    10100[channel_index] = 0;
+    channel_index += 1;
+  );
+  gmem[slot_base + 0] = 20260922; // protocol marker
+  gmem[slot_base + 2] = active_channels;
+  gmem[slot_base + 3] = srate;
+  gmem[slot_base + 4] = wave_write;
+  gmem[slot_base + 5] = db(overall_peak);
+  gmem[slot_base + 6] = db(sqrt(overall_energy / max(1, active_channels)));
+  gmem[slot_base + 7] = power_to_lufs(momentary_sum / max(1, min(4, loud_history_count)));
+  gmem[slot_base + 8] = power_to_lufs(short_sum / max(1, min(30, loud_history_count)));
+  gmem[slot_base + 9] = integrated_lufs;
+  gmem[slot_base + 10] = correlation_xy / sqrt(max(0.000000000001, correlation_l * correlation_r));
+  gmem[slot_base + 11] = db(overall_peak) - gmem[slot_base + 6];
+  gmem[slot_base + 16] = meter_response;
+  gmem[slot_base + 1] += 1;
+  meter_samples = 0;
+  correlation_xy = 0;
+  correlation_l = 0;
+  correlation_r = 0;
+);
+
+@slider
+reset > 0 ?
+(
+  clear_meters();
+  reset = 0;
+  sliderchange(reset);
+);
+
+@block
+active_channels = min(MAX_CHANNELS, max(1, num_ch));
+wave_channels = min(WAVE_CHANNELS, active_channels);
+slot_base = (meter_slot - 1) * SLOT_SIZE;
+gmem_reset = gmem[slot_base + 12];
+gmem_reset != last_gmem_reset ?
+(
+  last_gmem_reset = gmem_reset;
+  clear_meters();
+);
+srate != last_srate ?
+(
+  calc_k_weighting();
+  clear_meters();
+);
+gmem_response = gmem[slot_base + 16];
+gmem_response > 0 ? meter_response = min(2000, max(10, gmem_response));
+meter_response != last_meter_response ? calc_meter_response();
+
+fft_ready ?
+(
+  fft_real(FFT_BUFFER, FFT_SIZE);
+  fft_permute(FFT_BUFFER, FFT_SIZE / 2);
+  spectrum_index = 0;
+  slot_base = (meter_slot - 1) * SLOT_SIZE;
+  loop(SPECTRUM_BANDS,
+    // 20 Hz to 20 kHz logarithmic display bands.
+    frequency = 20 * pow(1000, spectrum_index / (SPECTRUM_BANDS - 1));
+    bin = min(FFT_SIZE / 2 - 1, max(1, floor(frequency / srate * FFT_SIZE)));
+    real_part = FFT_BUFFER[bin * 2];
+    imag_part = FFT_BUFFER[bin * 2 + 1];
+    magnitude = sqrt(real_part * real_part + imag_part * imag_part) / (FFT_SIZE / 2);
+    gmem[slot_base + SPECTRUM_BASE + spectrum_index] = max(-120, db(magnitude));
+    spectrum_index += 1;
+  );
+  memset(FFT_BUFFER, 0, FFT_SIZE);
+  fft_write = 0;
+  fft_ready = 0;
+);
+
+meter_samples >= max(1, srate / meter_rate) ? publish();
+
+loud_block_samples >= max(1, srate / 10) ?
+(
+  loud_value = loud_block_energy / loud_block_samples;
+  loud_history_count >= 4 ? momentary_sum -= HISTORY_BASE[(loud_history_write - 4 + HISTORY_SIZE) % HISTORY_SIZE];
+  loud_history_count >= 30 ? short_sum -= HISTORY_BASE[(loud_history_write - 30 + HISTORY_SIZE) % HISTORY_SIZE];
+  HISTORY_BASE[loud_history_write] = loud_value;
+  momentary_sum += loud_value;
+  short_sum += loud_value;
+  loud_history_write = (loud_history_write + 1) % HISTORY_SIZE;
+  loud_history_count = min(HISTORY_SIZE, loud_history_count + 1);
+  loud_block_number += 1;
+  loud_block_number % 10 == 0 ? update_integrated();
+  loud_block_samples = 0;
+  loud_block_energy = 0;
+);
+
+@sample
+channel_index = 0;
+mono = 0;
+loop(active_channels,
+  sample_value = spl(channel_index);
+  abs_sample = abs(sample_value);
+  abs_sample > 10000[channel_index] ? 10000[channel_index] = abs_sample;
+  response_peak = 10400[channel_index];
+  abs_sample > response_peak ? response_peak = abs_sample : response_peak *= meter_response_alpha;
+  10400[channel_index] = response_peak;
+  10500[channel_index] = meter_response_alpha * 10500[channel_index] + (1 - meter_response_alpha) * sample_value * sample_value;
+  channel_index < WAVE_CHANNELS ?
+  (
+    // Peak envelope for a dense, readable timeline waveform rather than an
+    // oscilloscope trace. The UI fills this symmetrically around the centre.
+    abs_sample > 10300[channel_index] ? 10300[channel_index] = abs_sample;
+  );
+  10100[channel_index] += sample_value * sample_value;
+  weighted_sample = k_weight(sample_value, channel_index);
+  loud_block_energy += weighted_sample * weighted_sample;
+  mono += sample_value;
+  channel_index += 1;
+);
+
+active_channels >= 2 ?
+(
+  correlation_xy += spl0 * spl1;
+  correlation_l += spl0 * spl0;
+  correlation_r += spl1 * spl1;
+);
+
+mono /= active_channels;
+fft_ready == 0 ?
+(
+  fft_window = 0.5 - 0.5 * cos(2 * $pi * fft_write / (FFT_SIZE - 1));
+  FFT_BUFFER[fft_write] = mono * fft_window;
+  fft_write += 1;
+  fft_write >= FFT_SIZE ? fft_ready = 1;
+);
+
+wave_countdown -= 1;
+wave_countdown <= 0 ?
+(
+  slot_base = (meter_slot - 1) * SLOT_SIZE;
+  channel_index = 0;
+  loop(wave_channels,
+    gmem[slot_base + WAVE_BASE + channel_index * WAVE_POINTS + wave_write] = 10300[channel_index];
+    10300[channel_index] = 0;
+    channel_index += 1;
+  );
+
+  wave_write = (wave_write + 1) % WAVE_POINTS;
+  gmem[slot_base + 13] += 1; // waveform update sequence
+  gmem[slot_base + 14] = wave_rate;
+  gmem[slot_base + 15] = wave_channels;
+  wave_countdown = max(1, floor(srate / wave_rate));
+);
+
+meter_samples += 1;
+loud_block_samples += 1;
