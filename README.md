@@ -1,68 +1,114 @@
-# REAPER Audio Post-Production Scripts
+# REAPER Audio Post Scripts
 
-A collection of custom REAPER scripts developed for audio post-production,
-film sound, mixing, editing, surround and immersive audio workflows.
+A collection of custom scripts, JSFX, and tools developed for **REAPER**, with a focus on audio post-production, film sound, mixing, surround, immersive audio, and workflow automation.
 
 ---
 
-## SurroundScope Multimeter Dashboard
+# SurroundScope Multimeter
 
-A ReaImGui-based multichannel audio analysis and metering dashboard for REAPER.
+A multichannel audio analysis and metering system for REAPER, designed for **audio post-production, surround, and immersive audio workflows**.
 
-### Features
+SurroundScope Multimeter consists of two components:
 
-- Multichannel Peak / RMS metering
-- ITU, Film and SMPTE channel layouts
-- Stereo, 5.1, 7.1 and 7.1.4 formats
-- Scrolling multichannel waveform
-- Spectrum analyzer
-- Loudness and phase monitoring
-- Surround-field visualization
-- Detailed channel statistics
-- Configurable meter response and peak hold
+- **SurroundScope Multimeter Analyzer** — JSFX analysis engine
+- **SurroundScope Multimeter Dashboard** — ReaImGui visualization interface
 
-### Screenshots
+The analyzer performs the audio analysis and publishes the data through REAPER's `gmem` system. The dashboard reads that data and provides a real-time analysis interface.
 
-#### Multichannel Meters
+---
 
-![SurroundScope Multimeter](Screenshots/meters.png)
+## Features
 
-#### Waveform
+### Multichannel Metering
 
-![SurroundScope Waveform](Screenshots/waveform.png)
+- Up to **64 REAPER channels**
+- Peak metering
+- RMS metering
+- Peak hold
+- Crest factor
+- Sample peak
+- Adjustable meter response
+- Horizontal and vertical meter layouts
+- Multiple meter scale presets
 
-#### Spectrum
+### Waveform Display
 
-![SurroundScope Spectrum](Screenshots/spectrum.png)
+- Real-time multichannel waveform/envelope display
+- Supports waveform visualization for up to **24 channels**
+- Adjustable waveform update rate
+- Multiple waveform display themes
+- Smooth rolling waveform visualization
+- Vertical and horizontal display modes
+- Transport-aware scrolling
 
-#### Loudness & Phase
+### Spectrum Analyzer
 
-![SurroundScope Loudness](Screenshots/loudness.png)
+- 20 Hz – 20 kHz frequency range
+- 48 logarithmic frequency bands
+- Spectrum smoothing
+- Peak hold
+- Real-time spectrum visualization
 
-#### Surround Field
+### Loudness & Phase
 
-![SurroundScope Surround Field](Screenshots/surround-scope.png)
+- Momentary loudness
+- Short-term loudness
+- Integrated loudness
+- Peak
+- RMS
+- Crest factor
+- L/R correlation
+- Loudness history display
 
-#### Channel Details
+The analyzer implements **BS.1770-style K-weighting** for its loudness analysis.
 
-![SurroundScope Channel Details](Screenshots/details.png)
+> The loudness measurements are analysis estimates. For compliance and delivery, use an approved standards-compliant loudness meter.
 
-### Installation
+### Surround Field
 
-1. Install [REAPER](https://www.reaper.fm/).
-2. Install the ReaImGui extension.
-3. Install the `SurroundScope Multimeter Analyzer.jsfx`.
-4. Copy `SurroundScope_Multimeter_Dashboard.lua` to your REAPER Scripts folder.
-5. Insert the analyzer JSFX on the desired audio path.
-6. Set the Dashboard and Analyzer to the same Analyzer Slot.
-7. Run the Dashboard script.
+Visualizes energy distribution across multichannel and immersive speaker layouts.
 
-### Requirements
+Supported speaker positions include:
 
-- REAPER
-- ReaImGui
-- SurroundScope Multimeter Analyzer JSFX
+- L
+- R
+- C
+- LFE
+- Ls
+- Rs
+- Lrs
+- Rrs
+- Ltf
+- Rtf
+- Ltr
+- Rtr
 
-### Script
+The scope provides:
 
-[SurroundScope_Multimeter_Dashboard.lua](Scripts/SurroundScope_Multimeter_Dashboard.lua)
+- Surround energy visualization
+- Speaker-position visualization
+- Energy centroid
+- Surround width
+- Field focus
+
+### Channel Details
+
+Detailed per-channel information including:
+
+- Channel
+- Peak
+- RMS
+- Hold
+- Crest
+- Sample peak
+
+---
+
+# Components
+
+## 1. SurroundScope Multimeter Analyzer
+
+**File:**
+
+```text
+JSFX/SurroundScope_Multimeter.jsfx
