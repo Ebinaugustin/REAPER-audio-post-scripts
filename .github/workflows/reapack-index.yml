@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   index:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -37,14 +37,11 @@ jobs:
             git tag ea-native-automation-v2.2.4
             git push origin refs/tags/ea-native-automation-v2.2.4
           fi
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.3'
       - name: Install official ReaPack indexer
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y pandoc
-          gem install reapack-index --no-document
+          sudo apt-get install -y pandoc ruby ruby-dev ruby-rugged build-essential cmake pkg-config libssl-dev zlib1g-dev
+          sudo gem install reapack-index --no-document --conservative
       - name: Validate extension metadata
         run: reapack-index --check --strict .
       - name: Generate index with immutable commit URLs
