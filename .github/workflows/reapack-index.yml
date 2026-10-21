@@ -1,0 +1,60 @@
+name: Publish ReaPack index
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Extensions/**'
+      - 'Screenshots/EA_Native_Automation/**'
+      - '.reapack-index.conf'
+      - '.github/workflows/reapack-index.yml'
+      - '.reapack-release-assets/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: reapack-index
+  cancel-in-progress: false
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Materialize verified release assets
+        run: python3 .reapack-release-assets/materialize.py
+      - name: Publish release assets and immutable version tag
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Extensions/EA_Native_Automation/v2.2.4
+          git rm -r --ignore-unmatch .reapack-release-assets/v2.2.4/parts
+          if ! git diff --cached --quiet; then
+            git commit -m 'Materialize verified EA Native Automation 2.2.4 release assets'
+            git push origin HEAD:main
+          fi
+          if ! git rev-parse --verify refs/tags/ea-native-automation-v2.2.4 >/dev/null 2>&1; then
+            git tag ea-native-automation-v2.2.4
+            git push origin refs/tags/ea-native-automation-v2.2.4
+          fi
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - name: Install official ReaPack indexer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y pandoc
+          gem install reapack-index --no-document
+      - name: Validate extension metadata
+        run: reapack-index --check --strict .
+      - name: Generate index with immutable commit URLs
+        run: reapack-index --scan Extensions --strict --no-commit .
+      - name: Publish index
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.xml
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish ReaPack package index'
+            git push origin HEAD:main
+          fi

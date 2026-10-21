@@ -1,0 +1,31 @@
+@description EA Native Automation
+@version 2.2.4
+@author Ebin Augustin
+@about
+  Compact Pro Tools-inspired automation panel for REAPER audio post-production.
+  Windows x64 native JUCE extension with a bundled Lua engine. Restart REAPER after installation.
+  Run EA: Native Automation (JUCE) - toggle panel. Search EA: Automation to assign shortcuts.
+  Includes Preview/Capture, Manual Write, Write on Stop, copy/paste/fill, adaptive docking and themes.
+  Known issues: native track volume/pan Manual Write and envelope lane visibility still require live host confirmation.
+  macOS/Linux source only; no installable binaries for those platforms yet.
+  AGPL-3.0-or-later. Complete corresponding source and dependency archives are linked below.
+@links
+  Documentation https://github.com/Ebinaugustin/REAPER-audio-post-scripts/tree/main/Extensions/EA_Native_Automation
+  Source https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/main/Extensions/EA_Native_Automation/v2.2.4/EA-Native-Automation-2.2.4-Source.zip
+@screenshots
+  Docking https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/main/Screenshots/EA_Native_Automation/Docking.png
+  Themes https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/main/Screenshots/EA_Native_Automation/Themes.png
+  Follow REAPER https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/main/Screenshots/EA_Native_Automation/Follow-Themes.png
+@changelog
+  First ReaPack distribution of native package 2.2.4 (Windows x64).
+  Bundles the matching automation engine and native shortcut actions.
+  Warn before full-session Manual Write when no time selection exists.
+@provides
+  [win64] EA_Native_Automation/ACTIONS.md https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v$version/Extensions/EA_Native_Automation/v$version/EA_Native_Automation/ACTIONS.md
+  [win64] EA_Native_Automation/CHANGELOG.md https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v$version/Extensions/EA_Native_Automation/v$version/EA_Native_Automation/CHANGELOG.md
+  [win64] EA_Native_Automation/LICENSE.txt https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v$version/Extensions/EA_Native_Automation/v$version/EA_Native_Automation/LICENSE.txt
+  [win64] EA_Native_Automation/README.md https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v$version/Extensions/EA_Native_Automation/v$version/EA_Native_Automation/README.md
+  [win64] EA_Native_Automation/THIRD-PARTY-NOTICES.md https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v$version/Extensions/EA_Native_Automation/v$version/EA_Native_Automation/THIRD-PARTY-NOTICES.md
+  [win64] EA_Native_Automation/VALIDATION.md https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v$version/Extensions/EA_Native_Automation/v$version/EA_Native_Automation/VALIDATION.md
+  [win64] EA_Native_Automation/engine.lua https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v$version/Extensions/EA_Native_Automation/v$version/EA_Native_Automation/engine.lua
+  [win64] reaper_ea_automation.dll https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v$version/Extensions/EA_Native_Automation/v$version/reaper_ea_automation.dll

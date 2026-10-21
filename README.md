@@ -2,6 +2,14 @@
 
 Custom REAPER scripts and JSFX for audio post-production, film sound, mixing, surround, immersive audio, and audio analysis.
 
+## EA Native Automation
+
+[EA Native Automation](Extensions/EA_Native_Automation/README.md) is a compact JUCE/C++ automation panel for REAPER post-production, with a bundled Lua engine, assignable actions, adaptive docking and theme colours. **Version 2.2.4: Windows x64 binary; macOS/Linux source only.** Native track volume/pan Manual Write has reported issues still awaiting live confirmation.
+
+Import this repository in ReaPack: `https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/main/index.xml`, install **EA Native Automation**, restart REAPER, then run **EA: Native Automation (JUCE) - toggle panel**.
+
+This extension is **AGPL-3.0-or-later** under its package-specific licence. Existing MIT-licensed tools retain their licence. The initial ReaPack index includes this extension; existing scripts/JSFX remain available through their current installation instructions.
+
 ---
 
 # SurroundScope Multimeter
