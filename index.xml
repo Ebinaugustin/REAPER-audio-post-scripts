@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<index version="1" name="EA Audio Post Scripts">
+  <category name="Extensions">
+    <reapack name="EA_Native_Automation.ext" type="extension" desc="EA Native Automation">
+      <metadata>
+        <description><![CDATA[{\rtf1\ansi\deff0{\fonttbl{\f0 \fswiss Helvetica;}{\f1 \fmodern Courier;}}
+{\colortbl;\red255\green0\blue0;\red0\green0\blue255;}
+\widowctrl\hyphauto
+
+{\pard \ql \f0 \sa180 \li0 \fi0 Compact Pro Tools-inspired automation panel for REAPER audio post-production. Windows x64 native JUCE extension with a bundled Lua engine. Restart REAPER after installation. Run EA: Native Automation (JUCE) - toggle panel. Search EA: Automation to assign shortcuts. Includes Preview/Capture, Manual Write, Write on Stop, copy/paste/fill, adaptive docking and themes. Known issues: native track volume/pan Manual Write and envelope lane visibility still require live host confirmation. macOS/Linux source only; no installable binaries for those platforms yet. AGPL-3.0-or-later. Complete corresponding source and dependency archives are linked below.\par}
+}
+]]></description>
+        <link rel="website" href="https://github.com/Ebinaugustin/REAPER-audio-post-scripts/tree/main/Extensions/EA_Native_Automation">Documentation</link>
+        <link rel="website" href="https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/main/Extensions/EA_Native_Automation/v2.2.4/EA-Native-Automation-2.2.4-Source.zip">Source</link>
+        <link rel="screenshot" href="https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/main/Screenshots/EA_Native_Automation/Docking.png">Docking</link>
+        <link rel="screenshot" href="https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/main/Screenshots/EA_Native_Automation/Themes.png">Themes</link>
+        <link rel="screenshot" href="https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/main/Screenshots/EA_Native_Automation/Follow-Themes.png">Follow REAPER</link>
+      </metadata>
+      <version name="2.2.4" author="Ebin Augustin" time="2026-10-21T18:27:02Z">
+        <changelog><![CDATA[First ReaPack distribution of native package 2.2.4 (Windows x64).
+Bundles the matching automation engine and native shortcut actions.
+Warn before full-session Manual Write when no time selection exists.]]></changelog>
+        <source platform="win64" file="EA_Native_Automation/ACTIONS.md">https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v2.2.4/Extensions/EA_Native_Automation/v2.2.4/EA_Native_Automation/ACTIONS.md</source>
+        <source platform="win64" file="EA_Native_Automation/CHANGELOG.md">https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v2.2.4/Extensions/EA_Native_Automation/v2.2.4/EA_Native_Automation/CHANGELOG.md</source>
+        <source platform="win64" file="EA_Native_Automation/LICENSE.txt">https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v2.2.4/Extensions/EA_Native_Automation/v2.2.4/EA_Native_Automation/LICENSE.txt</source>
+        <source platform="win64" file="EA_Native_Automation/README.md">https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v2.2.4/Extensions/EA_Native_Automation/v2.2.4/EA_Native_Automation/README.md</source>
+        <source platform="win64" file="EA_Native_Automation/THIRD-PARTY-NOTICES.md">https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v2.2.4/Extensions/EA_Native_Automation/v2.2.4/EA_Native_Automation/THIRD-PARTY-NOTICES.md</source>
+        <source platform="win64" file="EA_Native_Automation/VALIDATION.md">https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v2.2.4/Extensions/EA_Native_Automation/v2.2.4/EA_Native_Automation/VALIDATION.md</source>
+        <source platform="win64" file="EA_Native_Automation/engine.lua">https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v2.2.4/Extensions/EA_Native_Automation/v2.2.4/EA_Native_Automation/engine.lua</source>
+        <source platform="win64" file="reaper_ea_automation.dll">https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v2.2.4/Extensions/EA_Native_Automation/v2.2.4/reaper_ea_automation.dll</source>
+      </version>
+    </reapack>
+  </category>
+</index>
