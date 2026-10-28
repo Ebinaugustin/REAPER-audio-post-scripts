@@ -1,8 +1,6 @@
 name: Build EA Mac preview 2.2.15
 on:
-  push:
-    branches: ['build/mac-preview-2.2.15']
-    paths: ['.mac-preview/**', '.github/workflows/ea-mac-preview.yml']
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -64,11 +62,11 @@ jobs:
       - name: Run same universal test programs on Intel
         shell: bash
         run: |
-          chmod +x tests/*_tests
-          file tests/*_tests
-          tests/panel_model_tests
-          tests/native_bridge_tests
-          tests/action_catalog_tests
+          chmod +x tests/build/*_tests
+          file tests/build/*_tests
+          tests/build/panel_model_tests
+          tests/build/native_bridge_tests
+          tests/build/action_catalog_tests
   share:
     needs: [build, intel-check]
     runs-on: ubuntu-24.04
