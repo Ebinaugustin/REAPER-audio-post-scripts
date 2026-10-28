@@ -1,0 +1,105 @@
+name: Build EA Mac preview 2.2.15
+on:
+  push:
+    branches: ['build/mac-preview-2.2.15']
+    paths: ['.mac-preview/**', '.github/workflows/ea-mac-preview.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore exact source and pinned offline dependencies
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64, pathlib, zipfile
+          p=pathlib.Path('.mac-preview/source.zip.b64')
+          pathlib.Path('source.zip').write_bytes(base64.b64decode(p.read_bytes(),validate=True))
+          with zipfile.ZipFile('source.zip') as z: z.extractall('snapshot')
+          PY
+          curl --fail --location --retry 3 --output vendor-source.zip https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/ea-native-automation-v2.2.4/Extensions/EA_Native_Automation/v2.2.4/EA-Native-Automation-2.2.4-Source.zip
+          echo '5fdc591c13c53c54ca8580a13e6d99b5af775a7cd2d7ae2f1e4af6ecca321ebf  vendor-source.zip' | shasum -a 256 --check
+          unzip -q vendor-source.zip 'Source/vendor/*' -d snapshot
+          cmake -DEA_SOURCE_ROOT="$PWD/snapshot/Source" -DEA_DEPENDENCY_ROOT="$PWD/dependencies" -P snapshot/BuildSupport/PrepareDependencies.cmake
+      - name: Build universal extension
+        shell: bash
+        run: |
+          cmake -S snapshot/Source -B build -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_JUCE="$PWD/dependencies/JUCE" -DFETCHCONTENT_SOURCE_DIR_REAPER_SDK="$PWD/dependencies/reaper-sdk" -DFETCHCONTENT_SOURCE_DIR_WDL="$PWD/dependencies/WDL" '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64' -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15
+          cmake --build build --parallel 2
+          ctest --test-dir build --output-on-failure
+          cmake --install build --prefix "$PWD/stage" --component EA
+      - name: Automation engine model checks
+        shell: bash
+        run: |
+          command -v lua >/dev/null || brew install lua
+          lua snapshot/Source/tests/EngineModelTests.lua snapshot/Source/runtime/EA_Native_Automation/engine.lua | tee engine-tests.txt
+      - name: Build installer and test user-domain installation
+        run: python3 .mac-preview/mac_package.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EA-mac-delivery
+          path: mac-delivery/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EA-mac-model-tests
+          path: |
+            build/panel_model_tests
+            build/native_bridge_tests
+            build/action_catalog_tests
+            engine-tests.txt
+          if-no-files-found: error
+  intel-check:
+    needs: build
+    runs-on: macos-15-intel
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: EA-mac-model-tests
+          path: tests
+      - name: Run same universal test programs on Intel
+        shell: bash
+        run: |
+          chmod +x tests/*_tests
+          file tests/*_tests
+          tests/panel_model_tests
+          tests/native_bridge_tests
+          tests/action_catalog_tests
+  share:
+    needs: [build, intel-check]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: EA-mac-delivery
+          path: delivery/EA-Native-Automation-v2.2.15-macOS
+      - name: Publish sendable preview download on build branch only
+        shell: bash
+        run: |
+          echo 'PASS: universal model/layout, bridge and all 104 action catalog tests also ran on an Intel hosted Mac.' >> delivery/EA-Native-Automation-v2.2.15-macOS/BUILD-VALIDATION.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,zipfile
+          folder=Path('delivery/EA-Native-Automation-v2.2.15-macOS')
+          entries=[hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.relative_to(folder).as_posix() for p in sorted(folder.rglob('*')) if p.is_file() and p.name!='SHA256SUMS.txt']
+          (folder/'SHA256SUMS.txt').write_text('\n'.join(entries)+'\n')
+          out=Path('Mac-Preview')
+          out.mkdir(exist_ok=True)
+          with zipfile.ZipFile(out/(folder.name+'.zip'),'w',zipfile.ZIP_DEFLATED) as z:
+              for p in sorted(folder.rglob('*')):
+                  if p.is_file(): z.write(p,folder.name+'/'+p.relative_to(folder).as_posix())
+          (out/'README.md').write_text('# EA Native Automation 2.2.15 — Mac preview\n\nDownload the ZIP, open the included .pkg, then restart REAPER. Universal Intel + Apple Silicon. No compiler or extra dependencies required.\n\nThis preview is ad-hoc signed and not Apple notarized. macOS may require an explicit Open Anyway approval. Live REAPER Mac testing remains pending, including known volume/pan Manual Write and envelope visibility issues. Source, licence, full install instructions and validation are included. This build branch does not change the stable ReaPack package.\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Mac-Preview
+          git commit -m 'Package tested universal Mac preview for Daniel'
+          git push origin HEAD:build/mac-preview-2.2.15
+
