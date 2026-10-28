@@ -1,0 +1,21 @@
+{
+  "version": "2.2.15",
+  "windows": {
+    "path": "Extensions/EA_Native_Automation/v2.2.15/reaper_ea_automation.dll",
+    "bytes": 3489792,
+    "sha256": "69edef5181cbfcc507da3e2af51353d44fdf2969d6e4d2e15b1b8c9c67d9399b",
+    "parts": [
+      ".reapack-release-assets/v2.2.15/parts/windows-00.b64",
+      ".reapack-release-assets/v2.2.15/parts/windows-01.b64",
+      ".reapack-release-assets/v2.2.15/parts/windows-02.b64",
+      ".reapack-release-assets/v2.2.15/parts/windows-03.b64"
+    ]
+  },
+  "mac_archive": {
+    "url": "https://raw.githubusercontent.com/Ebinaugustin/REAPER-audio-post-scripts/build/mac-preview-2.2.15/Mac-Preview/EA-Native-Automation-v2.2.15-macOS.zip",
+    "sha256": "49bbf7af1a9e4c62af8f3a57ca76f89d896875e798582c5c45127df94d607f89"
+  },
+  "engine_sha256": "260e1e0070df9da8f5b48a1ed4d01044b58cf7fc41bcdf555ee821c4991530ff",
+  "mac_dylib_sha256": "6e26d68e59af9561c441d38390ddc21f6ecce48935b68080f03eaa8c1b95d436",
+  "source_sha256": "93f637ecd07f0457379a4590196ca01c1c7db4c22299fa6bfa23b0876e3b4605"
+}
