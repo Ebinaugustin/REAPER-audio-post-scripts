@@ -1,6 +1,9 @@
-name: Build EA Mac preview 2.2.15
+name: Build EA Mac preview 2.2.16
 on:
   workflow_dispatch:
+  push:
+    branches: [build/selected-preview-2.2.16]
+    paths: [.mac-preview/**, .github/workflows/ea-mac-preview.yml]
 permissions:
   contents: read
 jobs:
@@ -77,15 +80,15 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: EA-mac-delivery
-          path: delivery/EA-Native-Automation-v2.2.15-macOS
+          path: delivery/EA-Native-Automation-v2.2.16-macOS
       - name: Publish sendable preview download on build branch only
         shell: bash
         run: |
-          echo 'PASS: universal model/layout, bridge and all 104 action catalog tests also ran on an Intel hosted Mac.' >> delivery/EA-Native-Automation-v2.2.15-macOS/BUILD-VALIDATION.txt
+          echo 'PASS: universal model/layout, bridge and all 111 action catalog tests also ran on an Intel hosted Mac.' >> delivery/EA-Native-Automation-v2.2.16-macOS/BUILD-VALIDATION.txt
           python3 - <<'PY'
           from pathlib import Path
           import hashlib,zipfile
-          folder=Path('delivery/EA-Native-Automation-v2.2.15-macOS')
+          folder=Path('delivery/EA-Native-Automation-v2.2.16-macOS')
           entries=[hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.relative_to(folder).as_posix() for p in sorted(folder.rglob('*')) if p.is_file() and p.name!='SHA256SUMS.txt']
           (folder/'SHA256SUMS.txt').write_text('\n'.join(entries)+'\n')
           out=Path('Mac-Preview')
@@ -93,11 +96,10 @@ jobs:
           with zipfile.ZipFile(out/(folder.name+'.zip'),'w',zipfile.ZIP_DEFLATED) as z:
               for p in sorted(folder.rglob('*')):
                   if p.is_file(): z.write(p,folder.name+'/'+p.relative_to(folder).as_posix())
-          (out/'README.md').write_text('# EA Native Automation 2.2.15 — Mac preview\n\nDownload the ZIP, open the included .pkg, then restart REAPER. Universal Intel + Apple Silicon. No compiler or extra dependencies required.\n\nThis preview is ad-hoc signed and not Apple notarized. macOS may require an explicit Open Anyway approval. Live REAPER Mac testing remains pending, including known volume/pan Manual Write and envelope visibility issues. Source, licence, full install instructions and validation are included. This build branch does not change the stable ReaPack package.\n')
+          (out/'README.md').write_text('# EA Native Automation 2.2.16 — Mac preview\n\nDownload the ZIP, open the included .pkg, then restart REAPER. Universal Intel + Apple Silicon. No compiler or extra dependencies required.\n\nThis preview is ad-hoc signed and not Apple notarized. macOS may require an explicit Open Anyway approval. Live REAPER Mac testing remains pending, including known volume/pan Manual Write and envelope visibility issues. Source, licence, full install instructions and validation are included. This build branch does not change the stable ReaPack package.\n')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add Mac-Preview
-          git commit -m 'Package tested universal Mac preview for Daniel'
-          git push origin HEAD:build/mac-preview-2.2.15
-
+          git commit -m 'Package selected Preview and envelope hiding update'
+          git push origin HEAD:build/selected-preview-2.2.16

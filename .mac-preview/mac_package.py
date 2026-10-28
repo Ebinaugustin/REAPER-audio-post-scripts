@@ -6,7 +6,7 @@ def run(*args):
     return subprocess.check_output(args, text=True, stderr=subprocess.STDOUT)
 
 root = Path.cwd()
-version = '2.2.15'
+version = '2.2.16'
 source = root/'snapshot/Source'
 stage = root/'stage'
 work = root/'package-work'
@@ -17,7 +17,7 @@ assert {'arm64','x86_64'} == set(run('lipo','-archs',str(dylib)).split())
 assert '_ReaperPluginEntry' in run('nm','-gU',str(dylib))
 run('codesign','--force','--sign','-',str(dylib))
 run('codesign','--verify','--strict',str(dylib))
-assert b'2.2.15' in (stage/'UserPlugins/EA_Native_Automation/engine.lua').read_bytes()
+assert b'2.2.16' in (stage/'UserPlugins/EA_Native_Automation/engine.lua').read_bytes()
 assert (stage/'UserPlugins/EA_Native_Automation/engine.lua').read_bytes() == (source/'runtime/EA_Native_Automation/engine.lua').read_bytes()
 
 payload = work/'payload'
@@ -50,7 +50,7 @@ component = work/'component.pkg'
 print(run('pkgbuild','--root',str(payload),'--scripts',str(scripts),'--identifier','audio.ea.reaper.nativeautomation.preview','--version',version,'--install-location','/',str(component)))
 resources = work/'resources'
 resources.mkdir(exist_ok=True)
-(resources/'welcome.txt').write_text('''EA Native Automation 2.2.15 — macOS preview
+(resources/'welcome.txt').write_text('''EA Native Automation 2.2.16 — macOS preview
 
 Quit REAPER, then continue. Installs for this user into the standard REAPER resource folder. No compiler, JUCE installation or separate Lua installation is needed.
 
@@ -65,12 +65,12 @@ Portable/custom resource folders: cancel and use the Manual install folder in th
 Restart REAPER. Open Actions > Show action list and run:
 EA: Native Automation (JUCE) - toggle panel
 
-Search EA: Automation to assign keys to 104 individual commands. No action scripts need importing. Right-click the panel for docking, sizes, themes and visible sections.
+Search EA: Automation to assign keys to 111 individual commands. No action scripts need importing. Right-click the panel for docking, sizes, themes and visible sections.
 ''',encoding='utf-8')
 distribution = work/'Distribution.xml'
 distribution.write_text('''<?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="2">
-  <title>EA Native Automation 2.2.15</title>
+  <title>EA Native Automation 2.2.16</title>
   <welcome file="welcome.txt" mime-type="text/plain"/>
   <conclusion file="finish.txt" mime-type="text/plain"/>
   <options customize="never" require-scripts="false" hostArchitectures="arm64,x86_64"/>
@@ -78,7 +78,7 @@ distribution.write_text('''<?xml version="1.0" encoding="utf-8"?>
   <allowed-os-versions><os-version min="10.15"/></allowed-os-versions>
   <choices-outline><line choice="default"/></choices-outline>
   <choice id="default" visible="false"><pkg-ref id="audio.ea.reaper.nativeautomation.preview"/></choice>
-  <pkg-ref id="audio.ea.reaper.nativeautomation.preview" version="2.2.15" onConclusion="none">component.pkg</pkg-ref>
+  <pkg-ref id="audio.ea.reaper.nativeautomation.preview" version="2.2.16" onConclusion="none">component.pkg</pkg-ref>
 </installer-gui-script>
 ''',encoding='utf-8')
 setup = dest/f'EA-Native-Automation-v{version}-macOS.pkg'
@@ -94,15 +94,15 @@ shutil.copytree(stage/'UserPlugins',manual/'UserPlugins',dirs_exist_ok=True)
 shutil.copytree(stage/'Scripts',manual/'Scripts',dirs_exist_ok=True)
 for name in ('LICENSE.txt','THIRD-PARTY-NOTICES.md','ACTIONS.md'):
     shutil.copy2(source/name,dest/name)
-readme = '''EA Native Automation 2.2.15 — Mac preview
+readme = '''EA Native Automation 2.2.16 — Mac preview
 
 EASY INSTALL
 1. Quit REAPER.
-2. Open EA-Native-Automation-v2.2.15-macOS.pkg and continue through Installer.
+2. Open EA-Native-Automation-v2.2.16-macOS.pkg and continue through Installer.
 3. Restart REAPER. Actions > Show action list:
    EA: Native Automation (JUCE) - toggle panel
 
-Installs for your user to ~/Library/Application Support/REAPER. Intel and Apple Silicon are in one binary. No compilation or separate dependencies needed. Search EA: Automation for all 104 shortcut actions.
+Installs for your user to ~/Library/Application Support/REAPER. Intel and Apple Silicon are in one binary. No compilation or separate dependencies needed. Search EA: Automation for all 111 shortcut actions.
 
 This preview is ad-hoc signed, not Developer ID signed or Apple notarized. macOS may block the downloaded installer. After checking that this is the package you intended to open, use System Settings > Privacy & Security > Open Anyway if offered. Do not disable Gatekeeper. Apple guidance: https://support.apple.com/102445
 
@@ -116,7 +116,7 @@ UPGRADE / REMOVE
 The Installer backs up earlier EA binary/engine files under the REAPER resource folder's EA Native Automation Backups. It leaves your other extensions, themes, scripts and preferences alone. To remove, quit REAPER and remove UserPlugins/reaper_ea_automation.dylib and UserPlugins/EA_Native_Automation; the optional Scripts/EA_Compact_Automation.lua may also be removed.
 
 SOURCE / LICENSE
-AGPL-3.0-or-later; see LICENSE.txt and THIRD-PARTY-NOTICES.md. Complete corresponding source, build scripts and pinned dependency archives accompany this test build in EA-Native-Automation-v2.2.15-macOS-Source.zip. REAPER and its Inter fonts are not redistributed.
+AGPL-3.0-or-later; see LICENSE.txt and THIRD-PARTY-NOTICES.md. Complete corresponding source, build scripts and pinned dependency archives accompany this test build in EA-Native-Automation-v2.2.16-macOS-Source.zip. REAPER and its Inter fonts are not redistributed.
 '''
 (dest/'READ ME.txt').write_text(readme,encoding='utf-8')
 sourcezip = dest/f'EA-Native-Automation-v{version}-macOS-Source.zip'
@@ -141,4 +141,3 @@ for p in sorted(dest.rglob('*')):
     if p.is_file(): checks.append(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.relative_to(dest).as_posix())
 (dest/'SHA256SUMS.txt').write_text('\n'.join(checks)+'\n',encoding='ascii')
 print('PASS: universal binary, ad-hoc signature, package structure, source archive, real install/upgrade, engine parity')
-
