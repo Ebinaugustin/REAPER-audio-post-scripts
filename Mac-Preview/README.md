@@ -1,4 +1,4 @@
-# EA Native Automation 2.2.15 — Mac preview
+# EA Native Automation 2.2.16 — Mac preview
 
 Download the ZIP, open the included .pkg, then restart REAPER. Universal Intel + Apple Silicon. No compiler or extra dependencies required.
 
